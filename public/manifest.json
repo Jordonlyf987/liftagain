@@ -1,0 +1,37 @@
+{
+  "name": "LiftAgain",
+  "short_name": "LiftAgain",
+  "description": "Your physiotherapy companion — stay on track between clinic visits.",
+  "start_url": "/m/today",
+  "display": "standalone",
+  "background_color": "#f7f3ee",
+  "theme_color": "#e8633a",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icons/icon-72.png",  "sizes": "72x72",   "type": "image/png" },
+    { "src": "/icons/icon-96.png",  "sizes": "96x96",   "type": "image/png" },
+    { "src": "/icons/icon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "/icons/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "/icons/icon-152.png", "sizes": "152x152", "type": "image/png" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Session",
+      "short_name": "Session",
+      "description": "Begin today's rehab session",
+      "url": "/m/session/start",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Progress",
+      "short_name": "Progress",
+      "url": "/m/progress",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["health", "medical"],
+  "lang": "en-SG"
+}
