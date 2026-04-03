@@ -1,7 +1,7 @@
 'use client';
-// src/components/clinical/ClinicalSidebar.tsx
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 const NAV = [
   { href: '/dashboard',        icon: '▦',  label: 'Dashboard' },
@@ -23,6 +23,14 @@ interface Props {
 
 export function ClinicalSidebar({ profile, clinicName, newAlertCount }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   return (
     <aside className="flex h-screen w-48 flex-shrink-0 flex-col bg-brand-sidebar">
       <div className="border-b border-brand-sidebar2 p-4">
@@ -62,7 +70,7 @@ export function ClinicalSidebar({ profile, clinicName, newAlertCount }: Props) {
         })}
       </nav>
       <div className="border-t border-brand-sidebar2 p-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-2">
           <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-coral text-xs font-bold text-white">
             {(profile.full_name ?? 'U').split(' ').map(n => n[0]).join('').slice(0, 2)}
           </div>
@@ -71,6 +79,13 @@ export function ClinicalSidebar({ profile, clinicName, newAlertCount }: Props) {
             <div className="text-[9px] capitalize text-brand-textLight">{profile.role.replace('_', ' ')}</div>
           </div>
         </div>
+        <button
+          onClick={handleSignOut}
+          className="w-full rounded-md px-2 py-1.5 text-left text-xs text-[#a09080] hover:bg-white/5 hover:text-white transition-all flex items-center gap-2"
+        >
+          <span className="w-4 text-center">🚪</span>
+          <span>Sign Out</span>
+        </button>
       </div>
     </aside>
   );
