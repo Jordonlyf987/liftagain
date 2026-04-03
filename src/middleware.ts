@@ -1,18 +1,18 @@
-// middleware.ts
-// Auth + role-based routing middleware
-// Runs on every request before page renders
-
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Routes that require authentication
 const PROTECTED_CLINICAL = ['/dashboard', '/inbox', '/patients', '/plans', '/exercise-library', '/reports', '/messages', '/settings', '/audit-log'];
-const PROTECTED_PATIENT   = ['/m/today', '/m/session', '/m/checkin', '/m/progress', '/m/library', '/m/profile', '/m/games'];
-
-// Public routes (no auth needed)
-const PUBLIC_ROUTES = ['/login', '/m/login', '/m/onboarding'];
+const PROTECTED_PATIENT  = ['/m/today', '/m/session', '/m/checkin', '/m/progress', '/m/library', '/m/profile', '/m/games'];
+const PUBLIC_ROUTES      = ['/login', '/m/login', '/m/onboarding'];
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  // Always allow public routes through — no auth check at all
+  if (PUBLIC_ROUTES.some(r => path === r || path.startsWith(r + '/'))) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -32,32 +32,26 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session — REQUIRED: do not remove
   const { data: { user } } = await supabase.auth.getUser();
-  const path = request.nextUrl.pathname;
 
-  // ── Unauthenticated user hitting a protected route ─────────
+  // Not logged in hitting protected route
   if (!user) {
-    const isProtectedClinical = PROTECTED_CLINICAL.some(r => path.startsWith(r));
-    const isProtectedPatient  = PROTECTED_PATIENT.some(r => path.startsWith(r));
-
-    if (isProtectedClinical) {
+    if (PROTECTED_CLINICAL.some(r => path.startsWith(r))) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
-    if (isProtectedPatient) {
+    if (PROTECTED_PATIENT.some(r => path.startsWith(r))) {
       return NextResponse.redirect(new URL('/m/login', request.url));
     }
     return supabaseResponse;
   }
 
-  // ── Authenticated user: fetch role ─────────────────────────
+  // Get role
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, clinic_id, is_active')
+    .select('role, is_active')
     .eq('id', user.id)
     .single();
 
-  // Deactivated account
   if (profile && !profile.is_active) {
     await supabase.auth.signOut();
     return NextResponse.redirect(new URL('/login?error=account_deactivated', request.url));
@@ -67,25 +61,19 @@ export async function middleware(request: NextRequest) {
   const isPatient  = role === 'patient';
   const isClinical = ['clinic_admin', 'therapist', 'assistant'].includes(role);
 
-  // ── Redirect from login pages if already authed ────────────
-  if (path === '/login' || path === '/') {
+  // Logged in hitting root
+  if (path === '/') {
     if (isClinical) return NextResponse.redirect(new URL('/dashboard', request.url));
     if (isPatient)  return NextResponse.redirect(new URL('/m/today', request.url));
-  }
-  if (path === '/m/login') {
-    if (isPatient)  return NextResponse.redirect(new URL('/m/today', request.url));
-    if (isClinical) return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // ── Patients hitting clinical routes ──────────────────────
-  const isHittingClinical = PROTECTED_CLINICAL.some(r => path.startsWith(r));
-  if (isPatient && isHittingClinical) {
+  // Patient hitting clinical routes
+  if (isPatient && PROTECTED_CLINICAL.some(r => path.startsWith(r))) {
     return NextResponse.redirect(new URL('/m/today', request.url));
   }
 
-  // ── Clinical staff hitting patient routes ─────────────────
-  const isHittingPatient = PROTECTED_PATIENT.some(r => path.startsWith(r));
-  if (isClinical && isHittingPatient) {
+  // Clinical hitting patient routes
+  if (isClinical && PROTECTED_PATIENT.some(r => path.startsWith(r))) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
